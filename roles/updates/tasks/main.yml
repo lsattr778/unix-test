@@ -1,0 +1,75 @@
+---
+# tasks file for updates
+
+- name: Fail if running on unsupported Ubuntu version
+  ansible.builtin.setup:
+    filter: ansible_distribution*
+
+- name: Fail if not running Ubuntu 22.04
+  fail:
+    msg: "Host running unsupported {{ ansible_distribution }} version, only {{ ansible_distribution_version }}+ supported"
+  when: ansible_distribution != "Ubuntu" or ansible_distribution_version != "22.04"
+
+- name: Get /var used space
+  shell: df -h /var | awk 'NR==2 {print $5}' | sed 's/%//'
+  changed_when: false
+  register: var_used_pct
+  environment:
+    LANG: C
+    LC_ALL: C
+  tags:
+    - skip_ansible_lint
+    - check-disk-space
+
+- name: Set /var free space
+  set_fact:
+    var_free_space: "{{ (100 - var_used_pct.stdout | int) }}"
+  tags:
+    - check-disk-space
+
+- name: Show used var space
+  debug:
+    msg: "Used /var space: {{ var_used_pct.stdout }}%, free: {{ var_free_space }}%"
+  tags:
+    - check-disk-space
+
+- name: Fail if there is not enought space in /var
+  fail:
+    msg: Not enought space available in /var, need at least 10%, have {{ var_free_space }}
+  when: var_free_space | int < 10
+  tags:
+    - check-disk-space
+
+- name: Perform upgrade of all packages to the latest version
+  apt:
+    update_cache: yes
+    upgrade: dist
+  tags:
+    - update
+
+- name: Check if a reboot is required
+  stat:
+    path: /var/run/reboot-required
+    get_checksum: no
+  register: reboot
+
+- name: Reboot the server is needed
+  reboot:
+    reboot_timeout: 300
+    msg: "Rebooting after updates"
+  when: reboot.stat.exists
+  tags:
+    - reboot
+
+- name: Remove dependencies that are no longer required.
+  ansible.builtin.apt:
+    autoremove: yes
+
+- debug:
+    msg: "Server is back up and running"
+  when: reboot.stat.exists
+
+- name: Install apache
+  apt:
+    name: apache2
+    state: present 

@@ -1,0 +1,9 @@
+---
+- name: Converge
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Include role - updates
+      include_role:
+        name: updates
+      register: up
