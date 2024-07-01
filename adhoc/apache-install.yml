@@ -12,10 +12,7 @@
       ansible.builtin.service:
         name: "{{ apache_service }}"
         state: restarted
-         
-              
-                      
-                            
+  
   pre_tasks:
     - name: Override Apache vars for RHEL
       ansible.builtin.set_fact:
@@ -45,3 +42,4 @@
         name: "{{ apache_service }}"
         state: started
         enabled: true
+        
