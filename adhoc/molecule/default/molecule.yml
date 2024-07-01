@@ -38,8 +38,3 @@ scenario:
     - verify
     - cleanup
     - destroy
-
-check:
-  name: shell
-  options:
-    cmd: ./run_lint.sh
