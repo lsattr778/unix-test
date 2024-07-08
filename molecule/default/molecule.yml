@@ -16,21 +16,11 @@ platforms:
 provisioner:
   name: ansible
 
-verifier:
-  name: ansible
-
 scenario:
   name: default
   test_sequence:
-    - cleanup
-    - destroy
-    - dependency
-    - check
-    - syntax
-    - create
-    - prepare
     - converge
     - idempotence
     - verify
-    - cleanup
-    - destroy
+verifier:
+  name: ansible
